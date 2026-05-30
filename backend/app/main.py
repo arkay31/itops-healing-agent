@@ -6,8 +6,9 @@ from app.db.database import engine
 import app.models
 
 from app.api.incidents import router as incident_router
+from app.api.monitoring import router as monitoring_router
+from app.api.alerts import router as alert_router
 
-# Create all database tables
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -17,7 +18,8 @@ app = FastAPI(
 )
 
 app.include_router(incident_router)
-
+app.include_router(monitoring_router)
+app.include_router(alert_router)
 
 @app.get("/")
 def root():
@@ -25,7 +27,6 @@ def root():
         "project": "IT Ops Healing Agent",
         "status": "running"
     }
-
 
 @app.get("/health")
 def health():
