@@ -18,6 +18,61 @@ function App() {
   const [selectedIncident, setSelectedIncident] = useState(null);
   const [activePage, setActivePage] = useState("dashboard");
   const [cpuHistory, setCpuHistory] = useState([]);
+  const generateRCA = async (incident) => {
+  try {
+    const response = await axios.post(
+      "http://127.0.0.1:8000/rca/analyze",
+      {
+        description: incident.description,
+      }
+    );
+
+    setSelectedIncident({
+      ...incident,
+      rca_analysis:
+        response.data.analysis ||
+        JSON.stringify(response.data, null, 2),
+
+      healing_action:
+        response.data.healing?.action,
+
+      healing_status:
+        response.data.healing?.status,
+
+      healing_message:
+        response.data.healing?.message,
+    });
+  } catch (error) {
+    console.error("RCA Error:", error);
+  }
+};
+
+const executeHealing = async (incident) => {
+  try {
+    const response = await axios.post(
+      "http://127.0.0.1:8000/healing/heal",
+      {
+        analysis:
+          incident.rca_analysis || "",
+      }
+    );
+
+    setSelectedIncident({
+      ...incident,
+
+      healing_status:
+        response.data.status || "success",
+
+      healing_action:
+        response.data.action || "Healing Executed",
+
+      healing_message:
+        response.data.message || "",
+    });
+  } catch (error) {
+    console.error("Healing Error:", error);
+  }
+};
 
   useEffect(() => {
     fetchData();
@@ -30,6 +85,7 @@ function App() {
   }, []);
 
   const fetchData = async () => {
+    
     try {
       const incidentsResponse = await axios.get(
         "http://127.0.0.1:8000/incidents"
@@ -40,6 +96,7 @@ function App() {
       const cpuResponse = await axios.get(
         "http://127.0.0.1:8000/monitor/cpu"
       );
+      
 
       const cpu =
         parseFloat(
@@ -440,33 +497,63 @@ function App() {
               </p>
 
               <h3
-                style={{
-                  marginTop:
-                    "20px"
-                }}
-              >
-                🤖 RCA Analysis
-              </h3>
+  style={{
+    marginTop: "20px"
+  }}
+>
+  🤖 RCA Analysis
+</h3>
 
-              <pre>
-                {selectedIncident.rca_analysis ||
-                  "No RCA Available"}
-              </pre>
+<button
+  onClick={() =>
+    generateRCA(selectedIncident)
+  }
+  style={{
+    padding: "10px 20px",
+    marginBottom: "15px",
+    cursor: "pointer",
+  }}
+>
+  Generate RCA
+</button>
+
+<pre>
+  {selectedIncident.rca_analysis ||
+    "Click Generate RCA"}
+</pre>
 
               <h3
-                style={{
-                  marginTop:
-                    "20px"
-                }}
-              >
-                ⚡ Healing
-              </h3>
+  style={{
+    marginTop: "20px"
+  }}
+>
+  ⚡ Healing Engine
+</h3>
 
-              <p>
-                {
-                  selectedIncident.healing_action
-                }
-              </p>
+<button
+  onClick={() =>
+    executeHealing(selectedIncident)
+  }
+  style={{
+    padding: "10px 20px",
+    marginBottom: "15px",
+    cursor: "pointer",
+  }}
+>
+  Execute Healing
+</button>
+
+<p>
+  <strong>Status:</strong>{" "}
+  {selectedIncident.healing_status ||
+    "Pending"}
+</p>
+
+<p>
+  <strong>Action:</strong>{" "}
+  {selectedIncident.healing_action ||
+    "No action executed"}
+</p>
 
               <button
                 onClick={() =>
